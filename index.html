@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cut / Studio — Générateur de contours</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+<style>
+:root{--bg:#f5f3ff;--panel:#fff;--ink:#211731;--muted:#645c73;--violet:#7040eb;--lime:#d8ff62;--line:#dcd6e8;--magenta:#ec1e9b;--cyan:#17c3d6;--text:var(--ink)}
+*{box-sizing:border-box}body{margin:0;color:var(--ink);background:var(--bg);font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.5}button,input{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed}button,input{touch-action:manipulation}button:focus-visible,input:focus-visible{outline:3px solid var(--violet);outline-offset:5px}svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}.wrap{max-width:1256px;padding:0 36px;margin:auto}.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:24px 0;border-bottom:1px solid var(--line)}.brand{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:-.8px;font-size:22px}.brand-icon{display:grid;place-items:center;background:var(--lime);border:2px solid var(--ink);border-radius:10px;width:40px;height:40px;transform:rotate(-7deg)}.eyebrow,.topnote,.step,.preview-tag{font-size:12px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase}.topnote{color:var(--muted);text-align:right}.intro{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:28px 0 30px}.eyebrow{color:var(--violet);margin:0 0 8px}h1{font-size:clamp(34px,4.4vw,57px);line-height:1.03;letter-spacing:-2.4px;margin:0;font-weight:900}h1 em{font-style:normal;color:var(--violet)}.sub{color:var(--muted);margin:13px 0 0;max-width:600px;font-size:16px}.intro-label{background:var(--lime);border:2px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:12px 22px;border-radius:50%;font-size:19px;line-height:1.15;font-weight:900;text-align:center;transform:rotate(8deg);flex-shrink:0;margin-right:15px}.grid{display:grid;grid-template-columns:360px minmax(0,1fr);gap:24px;align-items:start}.panel{background:var(--panel);border:2px solid var(--ink);border-radius:20px;overflow:hidden}.controls{padding:24px;box-shadow:4px 4px 0 #e4ddee}.section-title{display:flex;align-items:center;gap:10px;margin:0 0 16px;font-size:19px;letter-spacing:-.4px}.step{display:grid;place-items:center;width:28px;height:28px;letter-spacing:0;border-radius:8px;background:var(--ink);color:#fff;font-size:12px}.step.lime{background:var(--lime);color:var(--ink)}.dropzone{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;width:100%;min-height:155px;background:#f3edff;border:2px dashed #a48acb;border-radius:14px;color:var(--ink);padding:18px;margin:0;transition:background .18s,transform .18s,border-color .18s;cursor:pointer}.file-picker{position:relative;z-index:2;display:block;width:100%;min-height:46px;margin-top:9px;padding:5px;background:#fff;color:var(--ink);border:2px solid var(--ink);border-radius:10px;font-size:14px;cursor:pointer}.file-picker::file-selector-button{min-height:32px;margin-right:10px;padding:6px 12px;background:var(--violet);color:#fff;border:0;border-radius:7px;font-weight:800;cursor:pointer}.file-picker::-webkit-file-upload-button{min-height:32px;margin-right:10px;padding:6px 12px;background:var(--violet);color:#fff;border:0;border-radius:7px;font-weight:800;cursor:pointer}.dropzone:focus-within{outline:3px solid var(--violet);outline-offset:5px}.dropzone:hover,.dropzone.drag{background:#e8dbff;border-color:var(--violet);transform:translateY(-2px)}.upload-icon{display:grid;place-items:center;width:40px;height:40px;background:var(--violet);color:#fff;border-radius:12px;margin-bottom:4px}.dropzone strong{font-size:16px;overflow-wrap:anywhere;max-width:100%}.dropzone small{font-size:14px;color:var(--muted)}.dropzone.has-file{border-style:solid;min-height:120px}.settings{border-top:1px solid var(--line);margin-top:24px;padding-top:21px}label{display:block;font-size:14px;font-weight:700;margin:15px 0 7px}.field{position:relative}.field input{width:100%;padding:11px 42px 11px 12px;background:#faf9fd;color:var(--ink);border:1px solid #bcb3ca;border-radius:9px;font-weight:700;font-size:18px}input[type=number]{appearance:textfield;-moz-appearance:textfield}input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.unit{position:absolute;right:13px;top:14px;color:var(--muted);font-size:14px;pointer-events:none}.fixed-note{font-size:13px;line-height:1.5;color:var(--muted);margin:8px 0 0}.row{display:flex;gap:14px}.row>div{flex:1;min-width:0}.row label{font-size:14px}.label-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}.primary,.secondary{display:flex;justify-content:center;align-items:center;gap:10px;width:100%;border:2px solid var(--ink);border-radius:12px;padding:13px 16px;font-size:16px;font-weight:800;transition:transform .15s,box-shadow .15s}.primary{margin-top:22px;background:var(--violet);color:#fff;box-shadow:3px 3px 0 var(--ink)}.secondary{background:var(--lime);color:var(--ink);box-shadow:3px 3px 0 var(--ink);margin-top:18px}.primary:not(:disabled):hover,.secondary:not(:disabled):hover{transform:translate(-1px,-2px);box-shadow:5px 5px 0 var(--ink)}.primary:not(:disabled):active,.secondary:not(:disabled):active{transform:translate(2px,2px);box-shadow:none}.primary:disabled{background:#e9e3f3;color:#776a8b;border-color:#d6cde2;box-shadow:none}.secondary:disabled{background:#eceaf0;color:#80768c;border-color:#d6cde2;box-shadow:none}.status{display:none;font-size:14px;line-height:1.5;padding:12px;border-radius:10px;margin-top:17px}.status.info{display:block;background:#f0eaff;color:#513398}.status.warn{display:block;background:#fff1cb;color:#734c00}.status.error{display:block;background:#ffeaee;color:#a12343}.preview-panel{box-shadow:5px 5px 0 #c3b0ef}.preview-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:18px 22px;border-bottom:2px solid var(--ink)}.preview-head h2{margin:0;font-size:19px;letter-spacing:-.4px}.preview-tag{border:1px solid var(--line);border-radius:30px;padding:5px 10px;color:var(--muted);font-size:12px;letter-spacing:.5px}.stage{min-height:405px;padding:26px;display:grid;place-items:center;background-color:#eeeaf5;background-image:radial-gradient(#c8bfd8 1px,transparent 1px);background-size:16px 16px;position:relative}.empty-state{text-align:center;max-width:310px;padding:22px 6px}.empty-mark{display:inline-flex;align-items:center;justify-content:center;background:var(--lime);border:2px solid var(--ink);border-radius:18px;width:74px;height:74px;transform:rotate(-8deg);box-shadow:5px 5px 0 var(--ink);margin:0 0 23px}.empty-mark svg{width:36px;height:36px}.empty-state h3{font-size:25px;letter-spacing:-.9px;line-height:1.2;margin:0 0 12px}.empty-state p{font-size:15px;color:var(--muted);margin:0}.empty-state .empty-format{font-size:12px;letter-spacing:1px;font-weight:bold;margin-top:23px;color:#625379}.stage canvas{display:block;max-width:100%;max-height:540px;object-fit:contain;width:auto;height:auto;box-shadow:0 8px 26px #21173118;background:#fff;border-radius:3px}.stage canvas[hidden],.empty-state[hidden]{display:none}.preview-bottom{padding:20px 22px 22px;border-top:2px solid var(--ink)}.legend{display:flex;gap:20px;flex-wrap:wrap;font-size:14px}.legend span{display:inline-flex;align-items:center;gap:8px}.swatch{width:21px;height:3px;display:inline-block}.meta{display:flex;flex-wrap:wrap;gap:5px 17px;color:var(--muted);font-size:13px;margin-top:12px}.meta:empty{display:none}.meta b{color:var(--ink)}.export-note{margin:12px 0 0;text-align:center;color:var(--muted);font-size:12px}footer{display:flex;justify-content:space-between;gap:14px;padding:26px 0 22px;font-size:12px;color:var(--muted)}footer strong{color:var(--ink)}
+@media(min-width:1400px){.wrap{padding-top:12px}.intro{padding-top:36px;padding-bottom:36px}.stage{min-height:430px}}
+@media(max-width:900px){.wrap{padding:0 22px}.grid{grid-template-columns:310px minmax(0,1fr);gap:18px}.controls{padding:19px}.intro-label{display:none}.stage{padding:18px;min-height:395px}.preview-head,.preview-bottom{padding:17px}.preview-tag{font-size:11px}}
+@media(max-width:700px){.wrap{padding:0 18px}.topbar{padding:18px 0}.topnote{font-size:10px;max-width:110px}.intro{padding:24px 0}.sub{font-size:15px}.grid{grid-template-columns:1fr;gap:22px}.controls{padding:22px}.stage{min-height:310px}.brand{font-size:20px}h1{letter-spacing:-1.5px}footer{flex-direction:column;gap:4px}.preview-tag{font-size:12px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="topbar"><div class="brand"><span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="m8 8 12 12M8 16 20 4"/></svg></span>cut / studio</div><span class="topnote">Du PNG à la découpe</span></header>
+<main>
+<div class="intro"><div><p class="eyebrow">Générateur de contours</p><h1>Ton visuel.<br>Ta prochaine <em>découpe.</em></h1><p class="sub">Importe ton PNG, ajuste tes contours et récupère ton PDF pour VersaWorks.</p></div><div class="intro-label" aria-hidden="true">À toi<br>de créer !</div></div>
+<div class="grid">
+<section class="panel controls" aria-label="Image et réglages">
+<h2 class="section-title"><span class="step">01</span> Ton image</h2>
+<div class="dropzone" id="dropzone"><span class="upload-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 16v5h16v-5"/></svg></span><strong id="fileName">Dépose ton PNG ici</strong><small id="fileHint">Choisis un fichier avec le bouton ci-dessous</small><small>Fond transparent requis</small><input class="file-picker" type="file" id="fileInput" accept="image/png,.png" aria-label="Choisir une image PNG à fond transparent"></div>
+<label for="firstName">Prénom (facultatif)</label>
+<div class="field"><input type="text" id="firstName" maxlength="60" autocomplete="given-name" placeholder="Ex. : Léa" aria-describedby="nameNote"></div>
+<p class="fixed-note" id="nameNote">Ton prénom sera ajouté au nom du PDF.</p>
+<div class="settings"><h2 class="section-title"><span class="step lime">02</span> Tes réglages</h2>
+<label for="maxSize">Taille du plus grand côté</label><div class="field"><input type="number" id="maxSize" value="80" min="5" max="80" step="0.5" aria-describedby="sizeNote"><span class="unit">mm</span></div><p class="fixed-note" id="sizeNote">De 5 à 80 mm. Les proportions sont conservées.</p>
+<div class="row"><div><label for="bleedMm"><i class="label-dot" style="background:#ec1e9b" aria-hidden="true"></i>Décalage de coupe</label><div class="field"><input type="number" id="bleedMm" value="-1" min="-10" max="10" step="0.1" aria-describedby="cutNote"><span class="unit">mm</span></div></div><div><label for="marginMm"><i class="label-dot" style="background:#17c3d6" aria-hidden="true"></i>Marge extérieure</label><div class="field"><input type="number" id="marginMm" value="5" min="0" max="30" step="0.5"><span class="unit">mm</span></div></div></div>
+<p class="fixed-note" id="cutNote">Coupe : valeur négative vers l’intérieur, positive vers l’extérieur. À 0, elle suit le contour.</p>
+<button class="primary" id="processBtn" disabled>Générer l’aperçu <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></button>
+<div class="status" id="status" role="status" aria-live="polite"></div></div></section>
+<section class="panel preview-panel" aria-label="Aperçu et export"><div class="preview-head"><h2>Le résultat</h2><span class="preview-tag" id="previewState">En attente du PNG</span></div>
+<div class="stage"><div class="empty-state" id="emptyState"><div class="empty-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h16v11l-5 5H4zM20 14h-6v6"/><path d="M8 9h8M8 12h3"/></svg></div><h3>Ça commence<br>avec ton visuel.</h3><p>Ajoute une image et génère l’aperçu pour voir tes lignes de découpe ici.</p><p class="empty-format">PNG → CONTOURS → PDF</p></div><canvas id="preview" width="600" height="600" hidden aria-label="Aperçu de l’image et de ses lignes de découpe"></canvas></div>
+<div class="preview-bottom"><div class="legend"><span><i class="swatch" style="background:#ec1e9b"></i>CutContour</span><span><i class="swatch" style="background:#17c3d6"></i>PerfCutContour</span></div><div class="meta" id="meta"></div><button id="downloadBtn" class="secondary" disabled><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 17v4h16v-4"/></svg>Télécharger le PDF</button><p class="export-note">Vérifie les deux tracés avant l’export.</p></div></section>
+</div></main><footer><span><strong>cut / studio</strong> · Générateur CutContour / PerfCutContour</span><span>Ton image est traitée dans ton navigateur.</span></footer>
+</div>
+<script>
+// ---------- core raster/contour algorithms ----------
+function buildMask(rgba, w, h, alphaThreshold) {
+  const mask = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) mask[i] = rgba[i * 4 + 3] >= alphaThreshold ? 1 : 0;
+  return mask;
+}
+function dilateMask(mask, w, h, radius) {
+  if (radius <= 0) return mask.slice();
+  const out = new Uint8Array(w * h);
+  const offsets = [];
+  const r2 = radius * radius;
+  for (let dy = -radius; dy <= radius; dy++)
+    for (let dx = -radius; dx <= radius; dx++)
+      if (dx*dx + dy*dy <= r2) offsets.push([dx, dy]);
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++)
+      if (mask[y*w+x])
+        for (const [dx,dy] of offsets) {
+          const nx=x+dx, ny=y+dy;
+          if (nx>=0 && nx<w && ny>=0 && ny<h) out[ny*w+nx]=1;
+        }
+  return out;
+}
+function erodeMask(mask, w, h, radius) {
+  if (radius <= 0) return mask.slice();
+  const out = new Uint8Array(w * h);
+  const offsets = [];
+  const r2 = radius * radius;
+  for (let dy=-radius; dy<=radius; dy++)
+    for (let dx=-radius; dx<=radius; dx++)
+      if (dx*dx + dy*dy <= r2) offsets.push([dx,dy]);
+  for (let y=0;y<h;y++) for (let x=0;x<w;x++) {
+    if (!mask[y*w+x]) continue;
+    let keep = true;
+    for (const [dx,dy] of offsets) {
+      const nx=x+dx, ny=y+dy;
+      if (nx<0||nx>=w||ny<0||ny>=h||!mask[ny*w+nx]) { keep=false; break; }
+    }
+    if (keep) out[y*w+x]=1;
+  }
+  return out;
+}
+// Décalage signé : positif = vers l'extérieur, négatif = vers l'intérieur.
+function offsetMask(mask, w, h, radiusPx) {
+  if (radiusPx > 0) return dilateMask(mask, w, h, radiusPx);
+  if (radiusPx < 0) return erodeMask(mask, w, h, -radiusPx);
+  return mask.slice();
+}
+function traceAllContours(mask, w, h) {
+  const isFg = (x,y) => x>=0 && x<w && y>=0 && y<h && mask[y*w+x]===1;
+  const key = (x,y) => x+','+y;
+  const nextPoint = new Map();
+  for (let y=0;y<h;y++) for (let x=0;x<w;x++) {
+    if (!isFg(x,y)) continue;
+    if (!isFg(x,y-1)) nextPoint.set(key(x,y), {x:x+1,y:y});
+    if (!isFg(x+1,y)) nextPoint.set(key(x+1,y), {x:x+1,y:y+1});
+    if (!isFg(x,y+1)) nextPoint.set(key(x+1,y+1), {x:x,y:y+1});
+    if (!isFg(x-1,y)) nextPoint.set(key(x,y+1), {x:x,y:y});
+  }
+  const visited = new Set();
+  const polys = [];
+  for (const startKey of nextPoint.keys()) {
+    if (visited.has(startKey)) continue;
+    const poly = []; let curKey = startKey; let guard=0;
+    const maxSteps = nextPoint.size + 4;
+    while (!visited.has(curKey) && guard < maxSteps) {
+      visited.add(curKey);
+      const [cx,cy] = curKey.split(',').map(Number);
+      poly.push({x:cx,y:cy});
+      const nxt = nextPoint.get(curKey);
+      if (!nxt) break;
+      curKey = key(nxt.x, nxt.y);
+      guard++;
+    }
+    if (poly.length >= 3) polys.push(poly);
+  }
+  return polys;
+}
+function simplifyRDP(points, epsilon) {
+  if (points.length < 3) return points.slice();
+  function perpDist(p,a,b) {
+    const dx=b.x-a.x, dy=b.y-a.y, len=Math.hypot(dx,dy);
+    if (len===0) return Math.hypot(p.x-a.x,p.y-a.y);
+    const t=((p.x-a.x)*dx+(p.y-a.y)*dy)/(len*len);
+    const px=a.x+t*dx, py=a.y+t*dy;
+    return Math.hypot(p.x-px,p.y-py);
+  }
+  function rdp(pts) {
+    if (pts.length<3) return pts;
+    let maxD=0, idx=0;
+    for (let i=1;i<pts.length-1;i++){
+      const d=perpDist(pts[i],pts[0],pts[pts.length-1]);
+      if (d>maxD){maxD=d;idx=i;}
+    }
+    if (maxD>epsilon){
+      const left=rdp(pts.slice(0,idx+1));
+      const right=rdp(pts.slice(idx));
+      return left.slice(0,-1).concat(right);
+    }
+    return [pts[0], pts[pts.length-1]];
+  }
+  return rdp(points);
+}
+function boundingBox(polys) {
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for (const poly of polys) for (const p of poly) {
+    if (p.x<minX) minX=p.x; if (p.y<minY) minY=p.y;
+    if (p.x>maxX) maxX=p.x; if (p.y>maxY) maxY=p.y;
+  }
+  return {minX,minY,maxX,maxY};
+}
+
+// ---------- PDF builder (true Separation spot colors) ----------
+const MM2PT = 72/25.4;
+class PDFBuilder {
+  constructor(){ this.chunks=[]; this.offsets=[0]; this.length=0;
+    this._push(strToBytes('%PDF-1.4\n%\u00E2\u00E3\u00CF\u00D3\n')); }
+  _push(u8){ this.chunks.push(u8); this.length += u8.length; }
+  addObject(build){ const n=this.offsets.length; this.offsets.push(this.length);
+    this._push(strToBytes(n+' 0 obj\n')); build(n); this._push(strToBytes('\nendobj\n')); return n; }
+  writeText(s){ this._push(strToBytes(s)); }
+  writeStream(dict, bytes){ this.writeText(dict+'\nstream\n'); this._push(bytes); this.writeText('\nendstream'); }
+  build(rootObjNum){
+    const xrefStart=this.length; const n=this.offsets.length;
+    let xref='xref\n0 '+n+'\n0000000000 65535 f \n';
+    for (let i=1;i<n;i++) xref += String(this.offsets[i]).padStart(10,'0')+' 00000 n \n';
+    const trailer='trailer\n<< /Size '+n+' /Root '+rootObjNum+' 0 R >>\nstartxref\n'+xrefStart+'\n%%EOF';
+    this._push(strToBytes(xref+trailer));
+    let total=0; for (const c of this.chunks) total+=c.length;
+    const out=new Uint8Array(total); let off=0;
+    for (const c of this.chunks){ out.set(c,off); off+=c.length; }
+    return out;
+  }
+}
+function strToBytes(s){ const a=new Uint8Array(s.length); for (let i=0;i<s.length;i++) a[i]=s.charCodeAt(i)&0xFF; return a; }
+function pathOps(polygonsMm, pageHeightMm) {
+  let ops='';
+  for (const poly of polygonsMm) {
+    if (poly.length<2) continue;
+    poly.forEach((p,i)=>{
+      const px=(p.x*MM2PT).toFixed(2), py=((pageHeightMm-p.y)*MM2PT).toFixed(2);
+      ops += px+' '+py+' '+(i===0?'m':'l')+'\n';
+    });
+    ops += 'h\n';
+  }
+  return ops;
+}
+function buildPrintCutPDF(opts) {
+  const { pageWidthMm, pageHeightMm, imagePxWidth, imagePxHeight, imageOffsetMm, imageSizeMm,
+          rgbBuffer, alphaBuffer, cutContourPolysMm, perfCutContourPolysMm, strokeWidthPt=0.5 } = opts;
+  const pdf = new PDFBuilder();
+  const W=(pageWidthMm*MM2PT).toFixed(2), H=(pageHeightMm*MM2PT).toFixed(2);
+  let imageNum, smaskNum, csCutNum, csPerfNum, fnCutNum, fnPerfNum, contentNum, pageNum, pagesNum, catalogNum;
+
+  smaskNum = pdf.addObject(()=>{
+    const z = pako.deflate(alphaBuffer);
+    pdf.writeStream('<< /Type /XObject /Subtype /Image /Width '+imagePxWidth+' /Height '+imagePxHeight+
+      ' /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode /Length '+z.length+' >>', z);
+  });
+  imageNum = pdf.addObject(()=>{
+    const z = pako.deflate(rgbBuffer);
+    pdf.writeStream('<< /Type /XObject /Subtype /Image /Width '+imagePxWidth+' /Height '+imagePxHeight+
+      ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode /Length '+z.length+
+      ' /SMask '+smaskNum+' 0 R >>', z);
+  });
+  fnCutNum = pdf.addObject(()=>{ pdf.writeText('<< /FunctionType 2 /Domain [0 1] /C0 [0 0 0 0] /C1 [0 1 0 0] /N 1 >>'); });
+  fnPerfNum = pdf.addObject(()=>{ pdf.writeText('<< /FunctionType 2 /Domain [0 1] /C0 [0 0 0 0] /C1 [1 0 0 0] /N 1 >>'); });
+  csCutNum = pdf.addObject(()=>{ pdf.writeText('[/Separation /CutContour /DeviceCMYK '+fnCutNum+' 0 R]'); });
+  csPerfNum = pdf.addObject(()=>{ pdf.writeText('[/Separation /PerfCutContour /DeviceCMYK '+fnPerfNum+' 0 R]'); });
+
+  const ix=(imageOffsetMm.x*MM2PT).toFixed(2);
+  const iyTop = pageHeightMm - imageOffsetMm.y - imageSizeMm.h;
+  const iy=(iyTop*MM2PT).toFixed(2);
+  const iw=(imageSizeMm.w*MM2PT).toFixed(2), ih=(imageSizeMm.h*MM2PT).toFixed(2);
+
+  let content = '';
+  content += 'q\n'+iw+' 0 0 '+ih+' '+ix+' '+iy+' cm\n/Im0 Do\nQ\n';
+  content += 'q\n/CS1 CS\n1 SCN\n'+strokeWidthPt+' w\n' + pathOps(cutContourPolysMm, pageHeightMm) + 'S\nQ\n';
+  content += 'q\n/CS2 CS\n1 SCN\n'+strokeWidthPt+' w\n' + pathOps(perfCutContourPolysMm, pageHeightMm) + 'S\nQ\n';
+
+  contentNum = pdf.addObject(()=>{
+    const bytes = strToBytes(content);
+    pdf.writeStream('<< /Length '+bytes.length+' >>', bytes);
+  });
+  pageNum = pdf.addObject((n)=>{
+    pdf.writeText('<< /Type /Page /Parent '+(n+1)+' 0 R /MediaBox [0 0 '+W+' '+H+'] '+
+      '/Resources << /XObject << /Im0 '+imageNum+' 0 R >> /ColorSpace << /CS1 '+csCutNum+' 0 R /CS2 '+csPerfNum+' 0 R >> >> '+
+      '/Contents '+contentNum+' 0 R >>');
+  });
+  pagesNum = pdf.addObject(()=>{ pdf.writeText('<< /Type /Pages /Kids ['+pageNum+' 0 R] /Count 1 >>'); });
+  catalogNum = pdf.addObject(()=>{ pdf.writeText('<< /Type /Catalog /Pages '+pagesNum+' 0 R >>'); });
+  return pdf.build(catalogNum);
+}
+
+// ---------- app wiring ----------
+const PX_PER_MM = 10; // working resolution for mask/contour/embedded raster
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const statusEl = document.getElementById('status');
+const metaEl = document.getElementById('meta');
+const processBtn = document.getElementById('processBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const canvas = document.getElementById('preview');
+const ctx = canvas.getContext('2d');
+
+let loadedImage = null;
+let lastResult = null; // holds everything needed to export the PDF
+
+function invalidatePreview(){
+  lastResult = null;
+  downloadBtn.disabled = true;
+  canvas.hidden = true;
+  document.getElementById('emptyState').hidden = false;
+  document.getElementById('previewState').textContent = 'Aperçu à générer';
+  metaEl.innerHTML = '';
+}
+['maxSize','bleedMm','marginMm'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    invalidatePreview();
+    if (loadedImage) setStatus('Réglages modifiés. Génère un nouvel aperçu.', 'info');
+  });
+});
+
+dropzone.addEventListener('dragover', e=>{e.preventDefault(); dropzone.classList.add('drag');});
+dropzone.addEventListener('dragleave', ()=>dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e=>{
+  e.preventDefault(); dropzone.classList.remove('drag');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e=>{ if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+function setStatus(msg, kind){
+  statusEl.textContent = msg;
+  statusEl.className = 'status' + (kind ? ' '+kind : ' info');
+}
+
+function handleFile(file){
+  // Pas de filtrage sur file.type : iOS/Android renvoient souvent un type vide ou inattendu
+  // pour un PNG parfaitement valide. On laisse le décodeur du navigateur trancher.
+  invalidatePreview();
+  loadedImage = null;
+  setStatus('Lecture du fichier\u2026', 'info');
+  processBtn.disabled = true;
+  downloadBtn.disabled = true;
+
+  const reader = new FileReader();
+  reader.onerror = ()=> setStatus(
+    'Le fichier n\'a pas pu être lu par le navigateur' +
+    (reader.error ? ' (' + reader.error.name + ')' : '') + '.', 'error');
+  reader.onload = ()=>{
+    const img = new Image();
+    img.onload = ()=>{
+      if (!img.width || !img.height) {
+        setStatus('Image décodée mais de dimensions nulles — fichier probablement corrompu.', 'error');
+        return;
+      }
+      loadedImage = img;
+      document.getElementById('fileName').textContent = file.name;
+      document.getElementById('fileHint').textContent = img.width + ' × ' + img.height + ' px · Changer d’image';
+      dropzone.classList.add('has-file');
+      document.getElementById('previewState').textContent = 'Image chargée';
+      processBtn.disabled = false;
+      setStatus('Image chargée. Clique sur "Générer l\'aperçu".', 'info');
+    };
+    img.onerror = ()=> setStatus(
+      'Le navigateur n\'a pas pu décoder ce fichier comme une image. ' +
+      'Vérifie qu\'il s\'agit bien d\'un PNG (et non d\'un HEIC ou d\'un PDF renommé).', 'error');
+    img.src = reader.result; // data: URL — fonctionne aussi en file:// et sur mobile
+  };
+  reader.readAsDataURL(file);
+}
+
+processBtn.addEventListener('click', ()=>{
+  if (!loadedImage) return;
+  invalidatePreview();
+  try { runPipeline(); } catch(err) {
+    console.error(err);
+    setStatus('Erreur pendant le traitement : ' + err.message, 'error');
+  }
+});
+
+function runPipeline(){
+  const maxSizeMm = Math.min(80, Math.max(5, parseFloat(document.getElementById('maxSize').value) || 80));
+  const rawBleed = parseFloat(document.getElementById('bleedMm').value);
+  const bleedMm = Math.max(-10, Math.min(10, isNaN(rawBleed) ? -1 : rawBleed));
+  const rawMargin = parseFloat(document.getElementById('marginMm').value);
+  const marginMm = Math.min(30, Math.max(0, isNaN(rawMargin) ? 5 : rawMargin));
+  document.getElementById('maxSize').value = maxSizeMm;
+  document.getElementById('bleedMm').value = bleedMm;
+  document.getElementById('marginMm').value = marginMm;
+
+  const iw = loadedImage.width, ih = loadedImage.height;
+  const scale = maxSizeMm / Math.max(iw, ih);
+  const targetWMm = iw * scale, targetHMm = ih * scale;
+
+  const workW = Math.round(targetWMm * PX_PER_MM);
+  const workH = Math.round(targetHMm * PX_PER_MM);
+
+  const off = document.createElement('canvas');
+  off.width = workW; off.height = workH;
+  const octx = off.getContext('2d');
+  octx.clearRect(0,0,workW,workH);
+  octx.drawImage(loadedImage, 0, 0, workW, workH);
+  const imgData = octx.getImageData(0,0,workW,workH);
+  const rgba = imgData.data;
+
+  // transparency check
+  let hasTransparency = false;
+  for (let i=3; i<rgba.length; i+=4) { if (rgba[i] < 250) { hasTransparency = true; break; } }
+  if (!hasTransparency) {
+    setStatus('Cette image ne semble pas avoir de fond transparent : la détection de contour ne pourra pas isoler la forme. Utilise un PNG avec transparence.', 'warn');
+    return;
+  }
+
+  const mask = buildMask(rgba, workW, workH, 128);
+  const offsetPx = Math.round(bleedMm * PX_PER_MM);
+  const shaped = offsetMask(mask, workW, workH, offsetPx);
+
+  let cutPolysPx = traceAllContours(shaped, workW, workH);
+  if (cutPolysPx.length === 0) {
+    setStatus(offsetPx < 0
+      ? 'Le retrait de ' + Math.abs(bleedMm) + ' mm efface complètement la forme : elle est trop fine pour ce décalage. Réduis la valeur.'
+      : 'Aucune forme détectée (image entièrement transparente ?).', 'error');
+    return;
+  }
+  const epsPx = 0.15 * PX_PER_MM; // ~0.15mm simplification tolerance
+  cutPolysPx = cutPolysPx.map(p => simplifyRDP(p, epsPx));
+
+  const cutPolysMm = cutPolysPx.map(poly => poly.map(p => ({ x: p.x/PX_PER_MM, y: p.y/PX_PER_MM })));
+  const bboxMm = boundingBox(cutPolysMm);
+
+  const perfMinX = bboxMm.minX - marginMm, perfMinY = bboxMm.minY - marginMm;
+  const perfMaxX = bboxMm.maxX + marginMm, perfMaxY = bboxMm.maxY + marginMm;
+  const perfRectMm = [[
+    {x:perfMinX,y:perfMinY}, {x:perfMaxX,y:perfMinY}, {x:perfMaxX,y:perfMaxY}, {x:perfMinX,y:perfMaxY}
+  ]];
+
+  const pagePadMm = 3;
+  const pageOriginX = perfMinX - pagePadMm, pageOriginY = perfMinY - pagePadMm;
+  const pageWmm = (perfMaxX - perfMinX) + 2*pagePadMm;
+  const pageHmm = (perfMaxY - perfMinY) + 2*pagePadMm;
+
+  function toPage(poly){ return poly.map(p=>({x:p.x-pageOriginX, y:p.y-pageOriginY})); }
+  const cutForPdf = cutPolysMm.map(toPage);
+  const perfForPdf = perfRectMm.map(toPage);
+
+  // preview render
+  const scalePx = canvas.width / pageWmm;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  const imgDrawX = (0 - pageOriginX)*scalePx, imgDrawY = (0 - pageOriginY)*scalePx;
+  ctx.drawImage(off, imgDrawX, imgDrawY, targetWMm*scalePx, targetHMm*scalePx);
+
+  function strokePoly(polys, color){
+    ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+    for (const poly of polys) {
+      ctx.beginPath();
+      poly.forEach((p,i)=>{
+        const x=p.x*scalePx, y=p.y*scalePx;
+        if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      });
+      ctx.closePath(); ctx.stroke();
+    }
+  }
+  strokePoly(perfForPdf, '#17c3d6');
+  strokePoly(cutForPdf, '#ec1e9b');
+  canvas.height = Math.round(canvas.width * (pageHmm/pageWmm));
+  // redraw at correct aspect (canvas resize clears it)
+  const scalePx2 = canvas.width / pageWmm;
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(off, (0-pageOriginX)*scalePx2, (0-pageOriginY)*scalePx2, targetWMm*scalePx2, targetHMm*scalePx2);
+  function strokePoly2(polys, color){
+    ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+    for (const poly of polys) {
+      ctx.beginPath();
+      poly.forEach((p,i)=>{ const x=p.x*scalePx2, y=p.y*scalePx2; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+      ctx.closePath(); ctx.stroke();
+    }
+  }
+  strokePoly2(perfForPdf, '#17c3d6');
+  strokePoly2(cutForPdf, '#ec1e9b');
+
+  metaEl.innerHTML =
+    '<span>Visuel : <b>'+targetWMm.toFixed(1)+' \u00D7 '+targetHMm.toFixed(1)+' mm</b></span>' +
+    '<span>Page PDF : <b>'+pageWmm.toFixed(1)+' \u00D7 '+pageHmm.toFixed(1)+' mm</b></span>' +
+    '<span>Formes détectées : <b>'+cutPolysMm.length+'</b></span>';
+
+  // extract raw RGB + alpha for the embedded raster (image placed at 0,0 of artwork space)
+  const rgbBuf = new Uint8Array(workW*workH*3);
+  const alphaBuf = new Uint8Array(workW*workH);
+  for (let i=0, j=0; i<rgba.length; i+=4, j++){
+    rgbBuf[j*3]=rgba[i]; rgbBuf[j*3+1]=rgba[i+1]; rgbBuf[j*3+2]=rgba[i+2];
+    alphaBuf[j]=rgba[i+3];
+  }
+
+  lastResult = {
+    pageWmm, pageHmm, workW, workH,
+    imageOffsetMm: { x: 0-pageOriginX, y: 0-pageOriginY },
+    imageSizeMm: { w: targetWMm, h: targetHMm },
+    rgbBuf, alphaBuf, cutForPdf, perfForPdf,
+  };
+
+  canvas.hidden = false;
+  document.getElementById('emptyState').hidden = true;
+  document.getElementById('previewState').textContent = 'Aperçu prêt';
+  downloadBtn.disabled = false;
+  setStatus('Aperçu généré. Vérifie les lignes avant de télécharger le PDF.', 'info');
+}
+
+function pdfFileName(firstName){
+  const name = firstName.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[<>:"/\\|?*\u0000-\u001f\u007f]/g, '-')
+    .replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^[. -]+|[. -]+$/g, '');
+  return name ? name + '-print-cut.pdf' : 'print-cut.pdf';
+}
+
+downloadBtn.addEventListener('click', ()=>{
+  if (!lastResult) return;
+  try {
+    const r = lastResult;
+    const bytes = buildPrintCutPDF({
+      pageWidthMm: r.pageWmm, pageHeightMm: r.pageHmm,
+      imagePxWidth: r.workW, imagePxHeight: r.workH,
+      imageOffsetMm: r.imageOffsetMm, imageSizeMm: r.imageSizeMm,
+      rgbBuffer: r.rgbBuf, alphaBuffer: r.alphaBuf,
+      cutContourPolysMm: r.cutForPdf, perfCutContourPolysMm: r.perfForPdf,
+      strokeWidthPt: 0.5,
+    });
+    const blob = new Blob([bytes], {type:'application/pdf'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = pdfFileName(document.getElementById('firstName').value);
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+    setStatus('PDF téléchargé.', 'info');
+  } catch(err) {
+    console.error(err);
+    setStatus('Erreur pendant la génération du PDF : ' + err.message, 'error');
+  }
+});
+</script>
+</body>
+</html>

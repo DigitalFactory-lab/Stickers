@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cut / Studio — Générateur de contours</title>
+<link rel="stylesheet" href="creative-lab.css">
+<script src="creative-lab.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 <style>
 :root{--bg:#f5f3ff;--panel:#fff;--ink:#211731;--muted:#645c73;--violet:#7040eb;--lime:#d8ff62;--line:#dcd6e8;--magenta:#ec1e9b;--cyan:#17c3d6;--text:var(--ink)}
@@ -16,9 +18,13 @@
 </head>
 <body>
 <div class="wrap">
-<header class="topbar"><div class="brand"><span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="m8 8 12 12M8 16 20 4"/></svg></span>cut / studio</div><span class="topnote">Du PNG à la découpe</span></header>
+<header class="topbar"><div class="brand"><span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="m8 8 12 12M8 16 20 4"/></svg></span>cut / studio</div><div class="factory-signature" aria-label="Digital Factory · Le Forem"><span class="factory-name">Digital Factory</span><span class="factory-forem">Le Forem</span></div></header>
 <main>
 <div class="intro"><div><p class="eyebrow">Générateur de contours</p><h1>Ton visuel.<br>Ta prochaine <em>découpe.</em></h1><p class="sub">Importe ton PNG, ajuste tes contours et récupère ton PDF pour VersaWorks.</p></div><div class="intro-label" aria-hidden="true">À toi<br>de créer !</div></div>
+<section class="creative-tools" aria-label="Prépare ton sticker">
+<button class="creative-card prompt-card" id="openPrompt" aria-haspopup="dialog" aria-controls="promptDialog"><span class="creative-pill">✦ Prompt sticker</span><strong>Ton idée. Le bon prompt.</strong><span class="creative-description">Sujet, style, composition et contraintes : une recette prête à personnaliser pour créer ton image.</span><span class="creative-bottom"><span>PNG transparent · 8 × 8 cm max.</span><b>Ouvrir le prompt ↗</b></span></button>
+<button class="creative-card styles-card" id="openStyles" aria-haspopup="dialog" aria-controls="stylesDialog"><span class="creative-pill">✳ Styles · 30 univers</span><strong>Trouve ta patte.</strong><span class="creative-description">Clique sur un style : il s’ajoute automatiquement au prompt. Complète ensuite les autres champs selon tes besoins.</span><span class="creative-bottom"><span class="mini-tags"><i>Y2K</i><i>Cartoon</i><i>Line art</i></span><b>Explorer les styles ↗</b></span></button>
+</section>
 <div class="grid">
 <section class="panel controls" aria-label="Image et réglages">
 <h2 class="section-title"><span class="step">01</span> Ton image</h2>
@@ -35,8 +41,20 @@
 <section class="panel preview-panel" aria-label="Aperçu et export"><div class="preview-head"><h2>Le résultat</h2><span class="preview-tag" id="previewState">En attente du PNG</span></div>
 <div class="stage"><div class="empty-state" id="emptyState"><div class="empty-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h16v11l-5 5H4zM20 14h-6v6"/><path d="M8 9h8M8 12h3"/></svg></div><h3>Ça commence<br>avec ton visuel.</h3><p>Ajoute une image et génère l’aperçu pour voir tes lignes de découpe ici.</p><p class="empty-format">PNG → CONTOURS → PDF</p></div><canvas id="preview" width="600" height="600" hidden aria-label="Aperçu de l’image et de ses lignes de découpe"></canvas></div>
 <div class="preview-bottom"><div class="legend"><span><i class="swatch" style="background:#ec1e9b"></i>CutContour</span><span><i class="swatch" style="background:#17c3d6"></i>PerfCutContour</span></div><div class="meta" id="meta"></div><button id="downloadBtn" class="secondary" disabled><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 17v4h16v-4"/></svg>Télécharger le PDF</button><p class="export-note">Vérifie les deux tracés avant l’export.</p></div></section>
-</div></main><footer><span><strong>cut / studio</strong> · Générateur CutContour / PerfCutContour</span><span>Ton image est traitée dans ton navigateur.</span></footer>
+</div></main><footer><span><strong>Digital Factory · Le Forem</strong> · cut / studio</span><span>Ton image est traitée dans ton navigateur.</span></footer>
 </div>
+<dialog class="lab-dialog" id="promptDialog" aria-labelledby="promptTitle">
+<div class="lab-header"><div><p class="eyebrow">Digital Factory · Le Forem / Prompt Lab</p><h2 id="promptTitle">Le prompt de ton sticker.</h2></div><button class="close-lab" data-close aria-label="Fermer le prompt">×</button></div>
+<div class="lab-body"><p class="lab-intro">Choisis un style : il s’ajoute automatiquement ici. Complète les autres champs entre crochets selon tes besoins, puis copie le prompt dans ton outil de génération d’images.</p><div class="prompt-badges"><span>8 × 8 cm maximum</span><span>Bordure blanche · 15 mm</span><span>PNG transparent</span></div><label class="prompt-label" for="stickerPrompt">Ton prompt, à personnaliser</label><textarea id="stickerPrompt" spellcheck="false"></textarea><p class="lab-note">Les dimensions et la transparence restent à vérifier sur l’image obtenue avant l’impression.</p></div>
+<div class="lab-actions"><button class="lab-button" id="promptToStyles">✳ Choisir un style</button><button class="lab-button copy-button" id="copyPrompt">Copier le prompt</button><p id="copyStatus" class="copy-status" role="status" aria-live="polite"></p></div>
+</dialog>
+<dialog class="lab-dialog styles-dialog" id="stylesDialog" aria-labelledby="stylesTitle">
+<div class="lab-header"><div><p class="eyebrow">Digital Factory · Le Forem / Style Lab</p><h2 id="stylesTitle">Choisis ton univers.</h2></div><button class="close-lab" data-close aria-label="Fermer les styles">×</button></div>
+<div class="lab-body"><p class="lab-intro">Clique sur un style : il s’ajoute automatiquement au prompt. Complète ensuite les autres champs selon tes besoins.</p><label class="search-label" for="styleSearch">Rechercher un style</label><input id="styleSearch" class="style-search" type="search" placeholder="Manga, rétro, chrome…"><p class="search-result" id="styleCount" role="status" aria-live="polite">30 styles à explorer</p>
+<section class="style-group" id="universeGroup" aria-labelledby="universeTitle"><div class="style-group-heading"><span>01 — 15</span><h3 id="universeTitle">Choisis ton univers.</h3><p>Web, rétro et streetwear : 15 directions à explorer.</p></div><div class="style-grid" id="universeStyles"></div><p class="mix-note"><b>À COMBINER :</b> Y2K + chrome, ou grunge + collage punk.</p></section>
+<section class="style-group" id="renderGroup" aria-labelledby="renderTitle"><div class="style-group-heading"><span>16 — 30</span><h3 id="renderTitle">Change de rendu.</h3><p>Illustration, traits et matières : 15 autres façons de créer.</p></div><div class="style-grid" id="renderStyles"></div><p class="mix-note"><b>TON MIX :</b> un style principal + une influence secondaire, si tu le souhaites.</p><p class="lab-note">Si tu combines deux styles, adapte la consigne « Mélange avec d’autres styles » dans le prompt.</p></section>
+<p id="noStyles" class="no-styles" hidden>Aucun style trouvé. Essaie un autre mot.</p><p class="style-source">Repère : Cat van der Werff, Canva, <a href="https://www.canva.com/newsroom/news/design-trends-2026/" target="_blank" rel="noopener noreferrer">Design Trends 2026 ↗</a> (rétro-tech, collage, textures, surréalisme).</p></div>
+</dialog>
 <script>
 // ---------- core raster/contour algorithms ----------
 function buildMask(rgba, w, h, alphaThreshold) {

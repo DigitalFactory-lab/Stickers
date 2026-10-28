@@ -20,26 +20,28 @@
 <div class="wrap">
 <header class="topbar"><div class="brand"><span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="m8 8 12 12M8 16 20 4"/></svg></span>cut / studio</div><div class="factory-signature" aria-label="Digital Factory · Le Forem"><span class="factory-name">Digital Factory</span><span class="factory-forem">Le Forem</span></div></header>
 <main>
-<div class="intro"><div><p class="eyebrow">Générateur de contours</p><h1>Ton visuel.<br>Ta prochaine <em>découpe.</em></h1><p class="sub">Importe ton PNG, ajuste tes contours et récupère ton PDF pour VersaWorks.</p></div><div class="intro-label" aria-hidden="true">À toi<br>de créer !</div></div>
+<div class="intro"><div><p class="eyebrow">Générateur de contours</p><h1>Ton visuel.<br>Ta prochaine <em>découpe.</em></h1><p class="sub">Importe ton image, choisis ta découpe et récupère ton PDF pour VersaWorks.</p></div><div class="intro-label" aria-hidden="true">À toi<br>de créer !</div></div>
 <section class="creative-tools" aria-label="Prépare ton sticker">
 <button class="creative-card prompt-card" id="openPrompt" aria-haspopup="dialog" aria-controls="promptDialog"><span class="creative-pill">✦ Prompt sticker</span><strong>Ton idée. Le bon prompt.</strong><span class="creative-description">Sujet, style, composition et contraintes : une recette prête à personnaliser pour créer ton image.</span><span class="creative-bottom"><span>PNG transparent · 8 × 8 cm max.</span><b>Ouvrir le prompt ↗</b></span></button>
+<button class="creative-card cutout-card" id="openCutout" aria-haspopup="dialog" aria-controls="cutoutDialog"><span class="creative-pill">✂ Prompt détourage</span><strong>Déjà une image ?</strong><span class="creative-description">Précise le sujet à garder et prépare un prompt pour supprimer le fond dans ton outil de retouche.</span><span class="creative-bottom"><span>Image existante → PNG transparent</span><b>Préparer le détourage ↗</b></span></button>
 <button class="creative-card styles-card" id="openStyles" aria-haspopup="dialog" aria-controls="stylesDialog"><span class="creative-pill">✳ Styles · 30 univers</span><strong>Trouve ta patte.</strong><span class="creative-description">Clique sur un style : il s’ajoute automatiquement au prompt. Complète ensuite les autres champs selon tes besoins.</span><span class="creative-bottom"><span class="mini-tags"><i>Y2K</i><i>Cartoon</i><i>Line art</i></span><b>Explorer les styles ↗</b></span></button>
 </section>
 <div class="grid">
 <section class="panel controls" aria-label="Image et réglages">
 <h2 class="section-title"><span class="step">01</span> Ton image</h2>
-<div class="dropzone" id="dropzone"><span class="upload-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 16v5h16v-5"/></svg></span><strong id="fileName">Dépose ton PNG ici</strong><small id="fileHint">Choisis un fichier avec le bouton ci-dessous</small><small>Fond transparent requis</small><input class="file-picker" type="file" id="fileInput" accept="image/png,.png" aria-label="Choisir une image PNG à fond transparent"></div>
+<label for="cutMode">Type de découpe</label><select id="cutMode" aria-describedby="cutModeNote"><option value="subject">Contour du sujet détouré</option><option value="file">Découpe du fichier · rectangle ou carré</option></select><p class="fixed-note mode-note" id="cutModeNote">Suit la silhouette du sujet. Une image à fond transparent est nécessaire.</p>
+<div class="dropzone" id="dropzone"><span class="upload-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 16v5h16v-5"/></svg></span><strong id="fileName">Dépose ton image ici</strong><small id="fileHint">Choisis un fichier avec le bouton ci-dessous</small><small id="uploadFormats">PNG, JPG / JPEG ou WebP</small><input class="file-picker" type="file" id="fileInput" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp" aria-label="Choisir une image PNG, JPG ou WebP"></div>
 <label for="firstName">Prénom (facultatif)</label>
 <div class="field"><input type="text" id="firstName" maxlength="60" autocomplete="given-name" placeholder="Ex. : Léa" aria-describedby="nameNote"></div>
 <p class="fixed-note" id="nameNote">Ton prénom sera ajouté au nom du PDF.</p>
 <div class="settings"><h2 class="section-title"><span class="step lime">02</span> Tes réglages</h2>
 <label for="maxSize">Taille du plus grand côté</label><div class="field"><input type="number" id="maxSize" value="80" min="5" max="80" step="0.5" aria-describedby="sizeNote"><span class="unit">mm</span></div><p class="fixed-note" id="sizeNote">De 5 à 80 mm. Les proportions sont conservées.</p>
-<div class="row"><div><label for="bleedMm"><i class="label-dot" style="background:#ec1e9b" aria-hidden="true"></i>Décalage de coupe</label><div class="field"><input type="number" id="bleedMm" value="-1" min="-10" max="10" step="0.1" aria-describedby="cutNote"><span class="unit">mm</span></div></div><div><label for="marginMm"><i class="label-dot" style="background:#17c3d6" aria-hidden="true"></i>Marge extérieure</label><div class="field"><input type="number" id="marginMm" value="5" min="0" max="30" step="0.5"><span class="unit">mm</span></div></div></div>
+<div class="row"><div id="cutOffsetField"><label for="bleedMm"><i class="label-dot" style="background:#ec1e9b" aria-hidden="true"></i>Décalage de coupe</label><div class="field"><input type="number" id="bleedMm" value="-1" min="-10" max="10" step="0.1" aria-describedby="cutNote"><span class="unit">mm</span></div></div><div><label for="marginMm"><i class="label-dot" style="background:#17c3d6" aria-hidden="true"></i>Marge extérieure</label><div class="field"><input type="number" id="marginMm" value="5" min="0" max="30" step="0.5"><span class="unit">mm</span></div></div></div>
 <p class="fixed-note" id="cutNote">Coupe : valeur négative vers l’intérieur, positive vers l’extérieur. À 0, elle suit le contour.</p>
 <button class="primary" id="processBtn" disabled>Générer l’aperçu <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></button>
 <div class="status" id="status" role="status" aria-live="polite"></div></div></section>
-<section class="panel preview-panel" aria-label="Aperçu et export"><div class="preview-head"><h2>Le résultat</h2><span class="preview-tag" id="previewState">En attente du PNG</span></div>
-<div class="stage"><div class="empty-state" id="emptyState"><div class="empty-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h16v11l-5 5H4zM20 14h-6v6"/><path d="M8 9h8M8 12h3"/></svg></div><h3>Ça commence<br>avec ton visuel.</h3><p>Ajoute une image et génère l’aperçu pour voir tes lignes de découpe ici.</p><p class="empty-format">PNG → CONTOURS → PDF</p></div><canvas id="preview" width="600" height="600" hidden aria-label="Aperçu de l’image et de ses lignes de découpe"></canvas></div>
+<section class="panel preview-panel" aria-label="Aperçu et export"><div class="preview-head"><h2>Le résultat</h2><span class="preview-tag" id="previewState">En attente d’une image</span></div>
+<div class="stage"><div class="empty-state" id="emptyState"><div class="empty-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h16v11l-5 5H4zM20 14h-6v6"/><path d="M8 9h8M8 12h3"/></svg></div><h3>Ça commence<br>avec ton visuel.</h3><p>Ajoute une image et génère l’aperçu pour voir tes lignes de découpe ici.</p><p class="empty-format">IMAGE → CONTOURS → PDF</p></div><canvas id="preview" width="600" height="600" hidden aria-label="Aperçu de l’image et de ses lignes de découpe"></canvas></div>
 <div class="preview-bottom"><div class="legend"><span><i class="swatch" style="background:#ec1e9b"></i>CutContour</span><span><i class="swatch" style="background:#17c3d6"></i>PerfCutContour</span></div><div class="meta" id="meta"></div><button id="downloadBtn" class="secondary" disabled><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 17v4h16v-4"/></svg>Télécharger le PDF</button><p class="export-note">Vérifie les deux tracés avant l’export.</p></div></section>
 </div></main><footer><span><strong>Digital Factory · Le Forem</strong> · cut / studio</span><span>Ton image est traitée dans ton navigateur.</span></footer>
 </div>
@@ -47,6 +49,11 @@
 <div class="lab-header"><div><p class="eyebrow">Digital Factory · Le Forem / Prompt Lab</p><h2 id="promptTitle">Le prompt de ton sticker.</h2></div><button class="close-lab" data-close aria-label="Fermer le prompt">×</button></div>
 <div class="lab-body"><p class="lab-intro">Choisis un style : il s’ajoute automatiquement ici. Complète les autres champs entre crochets selon tes besoins, puis copie le prompt dans ton outil de génération d’images.</p><div class="prompt-badges"><span>8 × 8 cm maximum</span><span>Bordure blanche · 15 mm</span><span>PNG transparent</span></div><label class="prompt-label" for="stickerPrompt">Ton prompt, à personnaliser</label><textarea id="stickerPrompt" spellcheck="false"></textarea><p class="lab-note">Les dimensions et la transparence restent à vérifier sur l’image obtenue avant l’impression.</p></div>
 <div class="lab-actions"><button class="lab-button" id="promptToStyles">✳ Choisir un style</button><button class="lab-button copy-button" id="copyPrompt">Copier le prompt</button><p id="copyStatus" class="copy-status" role="status" aria-live="polite"></p></div>
+</dialog>
+<dialog class="lab-dialog" id="cutoutDialog" aria-labelledby="cutoutTitle">
+<div class="lab-header"><div><p class="eyebrow">Digital Factory · Le Forem / Prompt Lab</p><h2 id="cutoutTitle">Garde le sujet. Retire le fond.</h2></div><button class="close-lab" data-close aria-label="Fermer le prompt de détourage">×</button></div>
+<div class="lab-body"><p class="lab-intro">Joins ton image à un outil de retouche capable d’exporter un PNG transparent. Décris précisément ce qu’il doit détourer, puis copie ce prompt avec l’image.</p><label for="cutoutTarget">Que faut-il conserver ? <span class="required-label">Obligatoire</span></label><input id="cutoutTarget" class="style-search" type="text" maxlength="600" required placeholder="Ex. : le chien au premier plan, avec son collier, sans la laisse" aria-describedby="cutoutHelp"><p id="cutoutHelp" class="lab-note">Indique le sujet, sa position et les accessoires à garder ou à retirer. Ta description s’ajoute au prompt.</p><label class="prompt-label cutout-label" for="cutoutPrompt">Ton prompt de détourage, à personnaliser</label><textarea id="cutoutPrompt" class="prompt-editor" spellcheck="false"></textarea><p class="lab-note">Après la retouche, importe le PNG obtenu et choisis « Contour du sujet détouré ». Pour garder l’image entière avec son fond, choisis directement « Découpe du fichier ».</p></div>
+<div class="lab-actions"><button class="lab-button copy-button" id="copyCutoutPrompt">Copier le prompt de détourage</button><p id="cutoutCopyStatus" class="copy-status" role="status" aria-live="polite"></p></div>
 </dialog>
 <dialog class="lab-dialog styles-dialog" id="stylesDialog" aria-labelledby="stylesTitle">
 <div class="lab-header"><div><p class="eyebrow">Digital Factory · Le Forem / Style Lab</p><h2 id="stylesTitle">Choisis ton univers.</h2></div><button class="close-lab" data-close aria-label="Fermer les styles">×</button></div>
@@ -287,6 +294,21 @@ dropzone.addEventListener('drop', e=>{
 });
 fileInput.addEventListener('change', e=>{ if (e.target.files[0]) handleFile(e.target.files[0]); });
 
+const cutModeInput = document.getElementById('cutMode');
+cutModeInput.addEventListener('change', () => {
+  const fileCut = cutModeInput.value === 'file';
+  document.getElementById('cutOffsetField').hidden = fileCut;
+  document.getElementById('bleedMm').disabled = fileCut;
+  document.getElementById('cutModeNote').textContent = fileCut
+    ? 'Conserve l’image entière et son fond. Le tracé suit ses quatre bords : rectangle ou carré selon ses proportions.'
+    : 'Suit la silhouette du sujet. Une image à fond transparent est nécessaire.';
+  document.getElementById('cutNote').textContent = fileCut
+    ? 'Le trait de coupe suit exactement le bord du fichier, sans recadrage. La marge extérieure règle le second tracé (PerfCutContour).'
+    : 'Coupe : valeur négative vers l’intérieur, positive vers l’extérieur. À 0, elle suit le contour.';
+  invalidatePreview();
+  if (loadedImage) setStatus('Type de découpe modifié. Génère un nouvel aperçu.', 'info');
+});
+
 function setStatus(msg, kind){
   statusEl.textContent = msg;
   statusEl.className = 'status' + (kind ? ' '+kind : ' info');
@@ -294,7 +316,7 @@ function setStatus(msg, kind){
 
 function handleFile(file){
   // Pas de filtrage sur file.type : iOS/Android renvoient souvent un type vide ou inattendu
-  // pour un PNG parfaitement valide. On laisse le décodeur du navigateur trancher.
+  // pour une image parfaitement valide. On laisse le décodeur du navigateur trancher.
   invalidatePreview();
   loadedImage = null;
   setStatus('Lecture du fichier\u2026', 'info');
@@ -322,7 +344,7 @@ function handleFile(file){
     };
     img.onerror = ()=> setStatus(
       'Le navigateur n\'a pas pu décoder ce fichier comme une image. ' +
-      'Vérifie qu\'il s\'agit bien d\'un PNG (et non d\'un HEIC ou d\'un PDF renommé).', 'error');
+      'Utilise un fichier PNG, JPG / JPEG ou WebP valide (pas un HEIC ou un PDF renommé).', 'error');
     img.src = reader.result; // data: URL — fonctionne aussi en file:// et sur mobile
   };
   reader.readAsDataURL(file);
@@ -340,6 +362,7 @@ processBtn.addEventListener('click', ()=>{
 function runPipeline(){
   const maxSizeMm = Math.min(80, Math.max(5, parseFloat(document.getElementById('maxSize').value) || 80));
   const rawBleed = parseFloat(document.getElementById('bleedMm').value);
+  const fileCut = document.getElementById('cutMode').value === 'file';
   const bleedMm = Math.max(-10, Math.min(10, isNaN(rawBleed) ? -1 : rawBleed));
   const rawMargin = parseFloat(document.getElementById('marginMm').value);
   const marginMm = Math.min(30, Math.max(0, isNaN(rawMargin) ? 5 : rawMargin));
@@ -351,8 +374,8 @@ function runPipeline(){
   const scale = maxSizeMm / Math.max(iw, ih);
   const targetWMm = iw * scale, targetHMm = ih * scale;
 
-  const workW = Math.round(targetWMm * PX_PER_MM);
-  const workH = Math.round(targetHMm * PX_PER_MM);
+  const workW = Math.max(1, Math.round(targetWMm * PX_PER_MM));
+  const workH = Math.max(1, Math.round(targetHMm * PX_PER_MM));
 
   const off = document.createElement('canvas');
   off.width = workW; off.height = workH;
@@ -362,11 +385,16 @@ function runPipeline(){
   const imgData = octx.getImageData(0,0,workW,workH);
   const rgba = imgData.data;
 
+  let cutPolysMm;
+  if (fileCut) {
+    // Trace the exact file bounds in millimetres, independent of alpha and mask rounding.
+    cutPolysMm = [[{x:0,y:0}, {x:targetWMm,y:0}, {x:targetWMm,y:targetHMm}, {x:0,y:targetHMm}]];
+  } else {
   // transparency check
   let hasTransparency = false;
   for (let i=3; i<rgba.length; i+=4) { if (rgba[i] < 250) { hasTransparency = true; break; } }
   if (!hasTransparency) {
-    setStatus('Cette image ne semble pas avoir de fond transparent : la détection de contour ne pourra pas isoler la forme. Utilise un PNG avec transparence.', 'warn');
+    setStatus('Cette image n’a pas de fond transparent. Choisis « Découpe du fichier » pour un rectangle ou un carré, ou utilise le prompt de détourage pour préparer un PNG transparent.', 'warn');
     return;
   }
 
@@ -384,7 +412,8 @@ function runPipeline(){
   const epsPx = 0.15 * PX_PER_MM; // ~0.15mm simplification tolerance
   cutPolysPx = cutPolysPx.map(p => simplifyRDP(p, epsPx));
 
-  const cutPolysMm = cutPolysPx.map(poly => poly.map(p => ({ x: p.x/PX_PER_MM, y: p.y/PX_PER_MM })));
+  cutPolysMm = cutPolysPx.map(poly => poly.map(p => ({ x: p.x/PX_PER_MM, y: p.y/PX_PER_MM })));
+  }
   const bboxMm = boundingBox(cutPolysMm);
 
   const perfMinX = bboxMm.minX - marginMm, perfMinY = bboxMm.minY - marginMm;
@@ -442,7 +471,8 @@ function runPipeline(){
   metaEl.innerHTML =
     '<span>Visuel : <b>'+targetWMm.toFixed(1)+' \u00D7 '+targetHMm.toFixed(1)+' mm</b></span>' +
     '<span>Page PDF : <b>'+pageWmm.toFixed(1)+' \u00D7 '+pageHmm.toFixed(1)+' mm</b></span>' +
-    '<span>Formes détectées : <b>'+cutPolysMm.length+'</b></span>';
+    '<span>Découpe : <b>'+(fileCut ? (iw === ih ? 'Carré' : 'Rectangle') : 'Contour du sujet')+'</b></span>' +
+    '<span>Tracés de coupe : <b>'+cutPolysMm.length+'</b></span>';
 
   // extract raw RGB + alpha for the embedded raster (image placed at 0,0 of artwork space)
   const rgbBuf = new Uint8Array(workW*workH*3);

@@ -30,6 +30,29 @@ CONTRAINTES
 - Détails trop fins, illisibles une fois imprimé.
 - Plusieurs sujets ou variantes dans la même image`;
 
+const cutoutPromptTemplate = `IMAGE SOURCE
+Travaille à partir de l’image jointe.
+
+ÉLÉMENT À CONSERVER
+[DÉCRIS PRÉCISÉMENT LE SUJET À DÉTOURER, SA POSITION ET LES ACCESSOIRES À GARDER OU À RETIRER]
+
+DÉTOURAGE
+- Isole uniquement l’élément décrit ci-dessus.
+- Supprime tout le fond et les éléments non demandés.
+- Conserve fidèlement le sujet : proportions, couleurs, détails, visage, texte et accessoires demandés.
+- Ne redessine pas le sujet et ne change pas son style.
+- Ne coupe aucune partie visible du sujet. N’invente pas les parties absentes de l’image source.
+- Nettoie les contours : pas de halo, de frange colorée ni de restes du fond.
+- Préserve les zones transparentes entre les parties du sujet.
+
+FICHIER ATTENDU
+- Une seule image au format PNG, avec un vrai canal alpha.
+- Fond 100 % transparent : ni fond blanc, ni couleur unie, ni damier dessiné dans l’image.
+- Sujet entier, centré, avec une petite marge transparente régulière autour.
+- Garde la meilleure résolution disponible, sans déformer le sujet.
+- N’ajoute ni ombre extérieure, ni bordure, ni texte, ni décor.
+- Si tu ne peux pas fournir un vrai PNG transparent, indique-le clairement.`;
+
 const stickerStyles = [
 ['Y2K - années 2000', 'Chrome, étoiles, formes brillantes, rose vif, bleu glacier et lettres arrondies.'],
 ['Cyber Y2K', 'Métal liquide, symboles numériques, typographie futuriste et contrastes marqués.'],
@@ -65,19 +88,25 @@ const stickerStyles = [
 
 const promptDialog = document.getElementById('promptDialog');
 const stylesDialog = document.getElementById('stylesDialog');
+const cutoutDialog = document.getElementById('cutoutDialog');
+const cutoutField = document.getElementById('cutoutPrompt');
+const cutoutTarget = document.getElementById('cutoutTarget');
+const cutoutCopyStatus = document.getElementById('cutoutCopyStatus');
+cutoutField.value = cutoutPromptTemplate;
 const promptField = document.getElementById('stickerPrompt');
 const copyStatus = document.getElementById('copyStatus');
 promptField.value = stickerPromptTemplate;
 
 function openLab(dialog) {
-  for (const other of [promptDialog, stylesDialog]) if (other.open) other.close();
+  for (const other of [promptDialog, stylesDialog, cutoutDialog]) if (other.open) other.close();
   dialog.showModal();
   dialog.querySelector('[data-close]').focus();
 }
 document.getElementById('openPrompt').addEventListener('click', () => openLab(promptDialog));
 document.getElementById('openStyles').addEventListener('click', () => openLab(stylesDialog));
+document.getElementById('openCutout').addEventListener('click', () => openLab(cutoutDialog));
 document.getElementById('promptToStyles').addEventListener('click', () => openLab(stylesDialog));
-for (const dialog of [promptDialog, stylesDialog]) {
+for (const dialog of [promptDialog, stylesDialog, cutoutDialog]) {
   dialog.querySelector('[data-close]').addEventListener('click', () => dialog.close());
   dialog.addEventListener('click', event => {
     const rect = dialog.getBoundingClientRect();
@@ -85,19 +114,34 @@ for (const dialog of [promptDialog, stylesDialog]) {
   });
 }
 promptField.addEventListener('input', () => { copyStatus.textContent = ''; });
-document.getElementById('copyPrompt').addEventListener('click', async () => {
+async function copyLabPrompt(field, status) {
   try {
-    await navigator.clipboard.writeText(promptField.value);
-    copyStatus.textContent = 'Prompt copié ! Colle-le dans ton outil de génération d’images.';
+    await navigator.clipboard.writeText(field.value);
+    status.textContent = 'Prompt copié ! Colle-le dans ton outil de création ou de retouche d’images.';
   } catch {
-    promptField.focus();
-    promptField.select();
+    field.focus();
+    field.select();
     let copied = false;
     try { copied = document.execCommand('copy'); } catch { /* Manual selection remains available. */ }
-    copyStatus.textContent = copied
-      ? 'Prompt copié ! Colle-le dans ton outil de génération d’images.'
+    status.textContent = copied
+      ? 'Prompt copié ! Colle-le dans ton outil de création ou de retouche d’images.'
       : 'Copie automatique indisponible. Le prompt est sélectionné : utilise Ctrl+C ou ⌘C pour le copier.';
   }
+}
+document.getElementById('copyPrompt').addEventListener('click', () => copyLabPrompt(promptField, copyStatus));
+cutoutTarget.addEventListener('input', () => {
+  cutoutTarget.setCustomValidity('');
+  const description = cutoutTarget.value.trim() || '[DÉCRIS PRÉCISÉMENT LE SUJET À DÉTOURER, SA POSITION ET LES ACCESSOIRES À GARDER OU À RETIRER]';
+  const section = /(ÉLÉMENT À CONSERVER\s*\n)[\s\S]*?(?=\n\s*\n|$)/;
+  if (section.test(cutoutField.value)) cutoutField.value = cutoutField.value.replace(section, (_, heading) => heading + description);
+  else cutoutField.value += '\n\nÉLÉMENT À CONSERVER\n' + description;
+  cutoutCopyStatus.textContent = '';
+});
+cutoutField.addEventListener('input', () => { cutoutCopyStatus.textContent = ''; });
+document.getElementById('copyCutoutPrompt').addEventListener('click', () => {
+  cutoutTarget.setCustomValidity(cutoutTarget.value.trim() ? '' : 'Précise d’abord le sujet à conserver.');
+  if (!cutoutTarget.reportValidity()) return;
+  copyLabPrompt(cutoutField, cutoutCopyStatus);
 });
 
 function selectStickerStyle(name, description) {
